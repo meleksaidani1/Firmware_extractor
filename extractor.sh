@@ -21,6 +21,9 @@ shopt -s expand_aliases
 # kdz
 # RUU
 
+
+shopt -s expand_aliases
+
 if [ $(uname) == Darwin ]; then
     alias sed=gsed
     alias tr=gtr
@@ -99,7 +102,7 @@ kdz_extract="$toolsdir/kdztools/unkdz.py"
 dz_extract="$toolsdir/kdztools/undz.py"
 ruu="$toolsdir/$HOST/bin/RUU_Decrypt_Tool"
 
-romzip="$(realpath $1)"
+romzip="$(readlink -f path $1)"
 romzipext="${romzip##*.}"
 PARTITIONS="system vendor cust odm oem factory product xrom modem dtbo boot recovery tz systemex oppo_product preload_common system_ext system_other opproduct reserve india my_preload my_odm my_stock my_operator my_country my_product my_company my_engineering my_heytap"
 EXT4PARTITIONS="system vendor cust odm oem factory product xrom systemex oppo_product preload_common"
@@ -108,7 +111,7 @@ OTHERPARTITIONS="tz.mbn:tz tz.img:tz modem.img:modem NON-HLOS:modem boot-verifie
 echo "Create Temp and out dir"
 outdir="$LOCALDIR/out"
 if [ ! "$2" == "" ]; then
-    outdir="$(realpath $2)"
+    outdir="$(rereadlink -f alpath $2)"
 fi
 tmpdir="$outdir/tmp"
 mkdir -p "$tmpdir"
@@ -119,7 +122,7 @@ MAGIC=$(head -c12 "$romzip" | tr -d '\0')
 if [[ $MAGIC == "OPPOENCRYPT!" ]] || [[ "$romzipext" == "ozip" ]]; then
     echo "ozip detected"
     cp "$romzip" "$tmpdir/temp.ozip"
-    python3 $ozipdecrypt "$tmpdir/temp.ozip"
+python $ozipdecrypt "$tmpdir/temp.ozip"
     if [[ -d "$tmpdir/out" ]]; then
         7z a -r "$tmpdir/temp.zip" "$tmpdir/out/*"
     fi
@@ -133,8 +136,8 @@ if [[ $(echo "$romzip" | grep kdz) ]]; then
     dzfile=`ls *.dz`
     python3 $dz_extract -f $dzfile -s -o "./"
     # Some known dz-partitions "gpt_main persist misc metadata vendor system system_other product userdata gpt_backup tz boot dtbo vbmeta cust oem odm factory modem NON-HLOS"
-    find . -maxdepth 4 -type f -name "*.image" | rename 's/.image/.img/g' > /dev/null 2>&1
-    find . -maxdepth 4 -type f -name "*_a.img" | rename 's/_a.img/.img/g' > /dev/null 2>&1
+find . -maxdepth 4 -type f -name "*.image" | xargs -I {} mv {} {}.img > /dev/null 2>&1
+find . -maxdepth 4 -type f -name "*_a.img" | xargs -I {} mv {} {}.img > /dev/null 2>&1
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
